@@ -1,0 +1,517 @@
+            document.quer<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Dev Змейка-Самоучка</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 600px;
+            height: 400px;
+            border: 2px solid #333;
+            background-color: #fff;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        #snake {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #4CAF50;
+            border-radius: 3px;
+        }
+        
+        .knowledge {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+        }
+        
+        .html { background-color: #E44D26; }
+        .css { background-color: #2965F1; }
+        .js { background-color: #F0DB4F; }
+        
+        #stats {
+            display: flex;
+            justify-content: space-around;
+            width: 600px;
+            margin-bottom: 10px;
+        }
+        
+        .stat {
+            padding: 5px 10px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+        }
+        
+        #html-stat { background-color: #E44D26; }
+        #css-stat { background-color: #2965F1; }
+        #js-stat { background-color: #F0DB4F; color: black; }
+        
+        #code-display {
+            width: 600px;
+            height: 150px;
+            background-color: #282c34;
+            color: #abb2bf;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            overflow-y: auto;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        
+        #controls {
+            margin-top: 10px;
+        }
+        
+        button {
+            padding: 8px 15px;
+            margin: 0 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Web Dev Змейка-Самоучка</h1>
+    <p>Змейка собирает знания (HTML, CSS, JS) и учится создавать код</p>
+    
+    <div id="stats">
+        <div class="stat" id="html-stat">HTML: 0</div>
+        <div class="stat" id="css-stat">CSS: 0</div>
+        <div class="stat" id="js-stat">JavaScript: 0</div>
+    </div>
+    
+    <div id="game-container">
+        <div id="snake"></div>
+    </div>
+    
+    <div id="code-display">
+        <p>// Здесь будет отображаться генерируемый код...</p>
+    </div>
+    
+    <div id="controls">
+        <button id="start-btn">Старт</button>
+        <button id="reset-btn">Сброс</button>
+    </div>
+
+    <script>
+        // Инициализация игры
+        const gameContainer = document.getElementById('game-container');
+        const snake = document.getElementById('snake');
+        const codeDisplay = document.getElementById('code-display');
+        const startBtn = document.getElementById('start-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        
+        const htmlStat = document.getElementById('html-stat');
+        const cssStat = document.getElementById('css-stat');
+        const jsStat = document.getElementById('js-stat');
+        
+        // Состояние игры
+        let gameState = {
+            score: { html: 0, css: 0, js: 0 },
+            snake: {
+                x: 100,
+                y: 100,
+                speed: 3,
+                direction: 'right',
+                size: 1,
+                tail: []
+            },
+            knowledge: [],
+            isRunning: false,
+            interval: null,
+            learnedConcepts: {
+                html: [],
+                css: [],
+                js: []
+            },
+            currentProject: []
+        };
+        
+        // Концепции для изучения
+        const concepts = {
+            html: ['DOCTYPE', 'html', 'head', 'title', 'body', 'div', 'p', 'a', 'img', 'ul', 'li', 'form', 'input', 'button'],
+            css: ['color', 'background-color', 'font-size', 'margin', 'padding', 'border', 'display', 'flex', 'grid', 'position', 'width', 'height'],
+            js: ['var', 'let', 'const', 'function', 'if', 'for', 'while', 'Array', 'Object', 'addEventListener', 'querySelector', 'getElementById']
+        };
+        
+        // Генерация случайных знаний на поле
+        function generateKnowledge() {
+            // Очищаем предыдущие знания
+            document.querySelectorAll('.knowledge').forEach(el => el.remove());
+            gameState.knowledge = [];
+            
+            // Генерируем новые знания (5 каждого типа)
+            for (let i = 0; i < 5; i++) {
+                const types = ['html', 'css', 'js'];
+                types.forEach(type => {
+                    const knowledge = {
+                        x: Math.random() * (gameContainer.offsetWidth - 20),
+                        y: Math.random() * (gameContainer.offsetHeight - 20),
+                        type: type,
+                        concept: concepts[type][Math.floor(Math.random() * concepts[type].length)]
+                    };
+                    
+                    gameState.knowledge.push(knowledge);
+                    
+                    const element = document.createElement('div');
+                    element.className = `knowledge ${type}`;
+                    element.style.left = `${knowledge.x}px`;
+                    element.style.top = `${knowledge.y}px`;
+                    element.setAttribute('data-concept', knowledge.concept);
+                    gameContainer.appendChild(element);
+                });
+            }
+        }
+        
+        // Движение змейки
+        function moveSnake() {
+            // Сохраняем предыдущую позицию
+            const prevX = gameState.snake.x;
+            const prevY = gameState.snake.y;
+            
+            // Обновляем позицию головы в зависимости от направления
+            switch (gameState.snake.direction) {
+                case 'up':
+                    gameState.snake.y -= gameState.snake.speed;
+                    break;
+                case 'down':
+                    gameState.snake.y += gameState.snake.speed;
+                    break;
+                case 'left':
+                    gameState.snake.x -= gameState.snake.speed;
+                    break;
+                case 'right':
+                    gameState.snake.x += gameState.snake.speed;
+                    break;
+            }
+            
+            // Проверяем границы
+            if (gameState.snake.x < 0) gameState.snake.x = gameContainer.offsetWidth - 20;
+            if (gameState.snake.x > gameContainer.offsetWidth - 20) gameState.snake.x = 0;
+            if (gameState.snake.y < 0) gameState.snake.y = gameContainer.offsetHeight - 20;
+            if (gameState.snake.y > gameContainer.offsetHeight - 20) gameState.snake.y = 0;
+            
+            // Обновляем хвост
+            if (gameState.snake.tail.length > 0) {
+                // Добавляем новую позицию в начало массива
+                gameState.snake.tail.unshift({ x: prevX, y: prevY });
+                
+                // Удаляем последний элемент, если хвост слишком длинный
+                if (gameState.snake.tail.length > gameState.snake.size) {
+                    gameState.snake.tail.pop();
+                }
+            }
+            
+            // Обновляем позицию змейки на экране
+            snake.style.left = `${gameState.snake.x}px`;
+            snake.style.top = `${gameState.snake.y}px`;
+            
+            // Проверяем столкновение с хвостом
+            checkTailCollision();
+            
+            // Проверяем сбор знаний
+            checkKnowledgeCollection();
+        }
+        
+        // Проверка сбора знаний
+        function checkKnowledgeCollection() {
+            const snakeRect = {
+                x: gameState.snake.x,
+                y: gameState.snake.y,
+                width: 20,
+                height: 20
+            };
+            
+            for (let i = 0; i < gameState.knowledge.length; i++) {
+                const knowledge = gameState.knowledge[i];
+                const knowledgeRect = {
+                    x: knowledge.x,
+                    y: knowledge.y,
+                    width: 15,
+                    height: 15
+                };
+                
+                if (isColliding(snakeRect, knowledgeRect)) {
+                    // Увеличиваем счет
+                    gameState.score[knowledge.type]++;
+                    updateStats();
+                    
+                    // Добавляем концепцию в изученные
+                    if (!gameState.learnedConcepts[knowledge.type].includes(knowledge.concept)) {
+                        gameState.learnedConcepts[knowledge.type].push(knowledge.concept);
+                        displayLearnedConcept(knowledge.type, knowledge.concept);
+                    }
+                    
+                    // Увеличиваем размер змейки
+                    gameState.snake.size += 1;
+                    
+                    // Удаляем собранное знание
+                    document.querySelectorAll('.knowledge').forEach(el => {
+                        if (parseInt(el.style.left) === knowledge.x && parseInt(el.style.top) === knowledge.y) {
+                            el.remove();
+                        }
+                    });
+                    
+                    gameState.knowledge.splice(i, 1);
+                    
+                    // Добавляем знание в текущий проект
+                    gameState.currentProject.push({
+                        type: knowledge.type,
+                        concept: knowledge.concept
+                    });
+                    
+                    // Проверяем, можно ли сгенерировать код
+                    tryGenerateCode();
+                    
+                    // Генерируем новое знание
+                    generateNewKnowledge();
+                    
+                    break;
+                }
+            }
+        }
+        
+        // Генерация нового знания после сбора
+        function generateNewKnowledge() {
+            const types = ['html', 'css', 'js'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            
+            const knowledge = {
+                x: Math.random() * (gameContainer.offsetWidth - 20),
+                y: Math.random() * (gameContainer.offsetHeight - 20),
+                type: type,
+                concept: concepts[type][Math.floor(Math.random() * concepts[type].length)]
+            };
+            
+            gameState.knowledge.push(knowledge);
+            
+            const element = document.createElement('div');
+            element.className = `knowledge ${type}`;
+            element.style.left = `${knowledge.x}px`;
+            element.style.top = `${knowledge.y}px`;
+            element.setAttribute('data-concept', knowledge.concept);
+            gameContainer.appendChild(element);
+        }
+        
+        // Проверка столкновения с хвостом
+        function checkTailCollision() {
+            const head = { x: gameState.snake.x, y: gameState.snake.y };
+            
+            for (let i = 0; i < gameState.snake.tail.length; i++) {
+                const segment = gameState.snake.tail[i];
+                if (Math.abs(head.x - segment.x) < 15 && Math.abs(head.y - segment.y) < 15) {
+                    // Столкновение - уменьшаем размер
+                    gameState.snake.size = Math.max(1, gameState.snake.size - 3);
+                    gameState.snake.tail = gameState.snake.tail.slice(0, gameState.snake.size);
+                    
+                    // Удаляем случайный изученный концепт
+                    const types = ['html', 'css', 'js'].filter(t => gameState.learnedConcepts[t].length > 0);
+                    if (types.length > 0) {
+                        const randomType = types[Math.floor(Math.random() * types.length)];
+                        const index = Math.floor(Math.random() * gameState.learnedConcepts[randomType].length);
+                        const removed = gameState.learnedConcepts[randomType].splice(index, 1)[0];
+                        displayMessage(`Потерян концепт: ${removed} (${randomType.toUpperCase()})`);
+                    }
+                    
+                    break;
+                }
+            }
+        }
+        
+        // Обновление статистики
+        function updateStats() {
+            htmlStat.textContent = `HTML: ${gameState.score.html}`;
+            cssStat.textContent = `CSS: ${gameState.score.css}`;
+            jsStat.textContent = `JavaScript: ${gameState.score.js}`;
+        }
+        
+        // Отображение изученного концепта
+        function displayLearnedConcept(type, concept) {
+            displayMessage(`Изучен новый концепт: ${concept} (${type.toUpperCase()})`);
+        }
+        
+        // Попытка сгенерировать код
+        function tryGenerateCode() {
+            // Минимальные требования для генерации кода
+            const minRequirements = {
+                html: 3,
+                css: 2,
+                js: 1
+            };
+            
+            // Проверяем, достаточно ли знаний
+            if (gameState.score.html >= minRequirements.html && 
+                gameState.score.css >= minRequirements.css && 
+                gameState.score.js >= minRequirements.js) {
+                
+                // Генерируем простой HTML-код
+                let htmlCode = '';
+                let cssCode = '';
+                let jsCode = '';
+                
+                // HTML
+                if (gameState.learnedConcepts.html.includes('div')) htmlCode += '<div>\n';
+                if (gameState.learnedConcepts.html.includes('p')) htmlCode += '  <p>Привет, мир!</p>\n';
+                if (gameState.learnedConcepts.html.includes('button')) htmlCode += '  <button id="myBtn">Нажми меня</button>\n';
+                if (gameState.learnedConcepts.html.includes('div')) htmlCode += '</div>\n';
+                
+                // CSS
+                if (gameState.learnedConcepts.css.includes('color')) cssCode += 'p { color: blue; }\n';
+                if (gameState.learnedConcepts.css.includes('background-color')) cssCode += 'div { background-color: #f0f0f0; }\n';
+                if (gameState.learnedConcepts.css.includes('padding')) cssCode += 'div { padding: 10px; }\n';
+                
+                // JavaScript
+                if (gameState.learnedConcepts.js.includes('addEventListener')) {
+                    jsCode += 'document.getElementById("myBtn").addEventListener("click", function() {\n';
+                    if (gameState.learnedConcepts.js.includes('console.log')) jsCode += '  console.log("Кнопка нажата!");\n';
+                    jsCode += '});\n';
+                }
+                
+                // Отображаем сгенерированный код
+                let fullCode = '';
+                if (htmlCode) fullCode += `<!-- HTML -->\n${htmlCode}\n`;
+                if (cssCode) fullCode += `/* CSS */\n${cssCode}\n`;
+                if (jsCode) fullCode += `// JavaScript\n${jsCode}\n`;
+                
+                if (fullCode) {
+                    codeDisplay.innerHTML = `<pre>${fullCode}</pre>`;
+                    displayMessage('Сгенерирован новый код!');
+                    
+                    // Сбрасываем счетчик для следующего проекта
+                    gameState.score.html = Math.max(0, gameState.score.html - minRequirements.html);
+                    gameState.score.css = Math.max(0, gameState.score.css - minRequirements.css);
+                    gameState.score.js = Math.max(0, gameState.score.js - minRequirements.js);
+                    updateStats();
+                }
+            }
+        }
+        
+        // Отображение сообщений
+        function displayMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.textContent = message;
+            messageElement.style.color = '#fff';
+            messageElement.style.margin = '5px 0';
+            codeDisplay.appendChild(messageElement);
+            codeDisplay.scrollTop = codeDisplay.scrollHeight;
+        }
+        
+        // Проверка столкновения
+        function isColliding(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+        
+        // ИИ для принятия решений
+        function makeDecision() {
+            if (gameState.knowledge.length === 0) return;
+            
+            // Находим ближайшее знание
+            let closest = null;
+            let minDistance = Infinity;
+            
+            gameState.knowledge.forEach(knowledge => {
+                const dx = knowledge.x - gameState.snake.x;
+                const dy = knowledge.y - gameState.snake.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closest = knowledge;
+                }
+            });
+            
+            if (!closest) return;
+            
+            // Определяем направление к ближайшему знанию
+            const dx = closest.x - gameState.snake.x;
+            const dy = closest.y - gameState.snake.y;
+            
+            // Приоритет направления с большей разницей
+            if (Math.abs(dx) > Math.abs(dy)) {
+                gameState.snake.direction = dx > 0 ? 'right' : 'left';
+            } else {
+                gameState.snake.direction = dy > 0 ? 'down' : 'up';
+            }
+            
+            // 10% шанс на случайное изменение направления (для исследования)
+            if (Math.random() < 0.1) {
+                const directions = ['up', 'down', 'left', 'right'];
+                gameState.snake.direction = directions[Math.floor(Math.random() * directions.length)];
+            }
+        }
+        
+        // Основной игровой цикл
+        function gameLoop() {
+            if (!gameState.isRunning) return;
+            
+            makeDecision();
+            moveSnake();
+        }
+        
+        // Обработчики событий
+        startBtn.addEventListener('click', () => {
+            if (!gameState.isRunning) {
+                gameState.isRunning = true;
+                startBtn.textContent = 'Пауза';
+                generateKnowledge();
+                gameState.interval = setInterval(gameLoop, 50);
+            } else {
+                gameState.isRunning = false;
+                startBtn.textContent = 'Продолжить';
+                clearInterval(gameState.interval);
+            }
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            gameState.isRunning = false;
+            clearInterval(gameState.interval);
+            
+            // Сброс состояния
+            gameState = {
+                score: { html: 0, css: 0, js: 0 },
+                snake: {
+                    x: 100,
+                    y: 100,
+                    speed: 3,
+                    direction: 'right',
+                    size: 1,
+                    tail: []
+                },
+                knowledge: [],
+                isRunning: false,
+                interval: null,
+                learnedConcepts: {
+                    html: [],
+                    css: [],
+                    js: []
+                },
+                currentProject: []
+            };
+            
+            // Обновление отображения
+            updateStats();
+            snake.style.left = '100px';
+            snake.style.top = '100px';
+            document.quer
