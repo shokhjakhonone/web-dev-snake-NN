@@ -3,78 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Dev Змейка-Самоучка</title>
+    <title>AI Змейка-Разработчик</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         #game-container {
             position: relative;
             background-color: #f8fafc;
             overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
         
-        #snake {
+        #snake-head {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            transition: all 0.15s ease-out;
+            z-index: 10;
+            box-shadow: 0 0 10px rgba(72, 187, 120, 0.7);
+        }
+        
+        .snake-tail {
             position: absolute;
             width: 20px;
             height: 20px;
             border-radius: 3px;
-            transition: left 0.1s linear, top 0.1s linear;
+            transition: all 0.3s ease-out;
         }
         
         .knowledge {
             position: absolute;
-            width: 15px;
-            height: 15px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
+            transition: all 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .brain-cell {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            position: absolute;
+            opacity: 0.7;
+        }
+        
+        #brain-visualization {
+            background: rgba(0,0,0,0.05);
+            border-radius: 10px;
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col items-center p-4">
-    <header class="text-center mb-6">
-        <h1 class="text-3xl font-bold text-green-600 mb-2">Web Dev Змейка-Самоучка</h1>
-        <p class="text-gray-600">Змейка собирает знания (HTML, CSS, JS) и учится создавать код</p>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center p-4 font-sans">
+    <header class="text-center mb-6 w-full max-w-4xl">
+        <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-blue-600 mb-2">AI Змейка-Разработчик</h1>
+        <p class="text-gray-600 text-lg">Нейросетевая змейка, изучающая веб-технологии и генерирующая код</p>
     </header>
 
-    <div class="flex gap-4 mb-4 w-full max-w-2xl">
-        <div id="html-stat" class="stat bg-orange-600">HTML: 0</div>
-        <div id="css-stat" class="stat bg-blue-600">CSS: 0</div>
-        <div id="js-stat" class="stat bg-yellow-400 text-gray-800">JavaScript: 0</div>
+    <div class="flex flex-col lg:flex-row gap-6 w-full max-w-4xl">
+        <!-- Основной игровой блок -->
+        <div class="flex-1">
+            <div class="flex gap-4 mb-4">
+                <div id="html-stat" class="stat bg-orange-600 shadow-md">HTML: 0</div>
+                <div id="css-stat" class="stat bg-blue-600 shadow-md">CSS: 0</div>
+                <div id="js-stat" class="stat bg-yellow-400 text-gray-800 shadow-md">JavaScript: 0</div>
+            </div>
+            
+            <div id="game-container" class="w-full h-96 rounded-xl mb-4 relative">
+                <div id="snake-head" class="bg-gradient-to-r from-green-400 to-green-600"></div>
+                <!-- Хвост будет добавляться динамически -->
+            </div>
+            
+            <div class="flex gap-2 mb-4">
+                <button id="start-btn" class="px-5 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition shadow-md flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    </svg>
+                    Старт
+                </button>
+                <button id="reset-btn" class="px-5 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition shadow-md flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+                    </svg>
+                    Сброс
+                </button>
+                <button id="ai-btn" class="px-5 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition shadow-md flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+                    </svg>
+                    AI Анализ
+                </button>
+            </div>
+        </div>
+        
+        <!-- Блок визуализации AI -->
+        <div class="w-full lg:w-96">
+            <div class="bg-white rounded-xl shadow-md p-4 mb-4">
+                <h3 class="font-bold text-lg text-gray-800 mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-600" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z" clip-rule="evenodd" />
+                    </svg>
+                    Нейросеть змейки
+                </h3>
+                <div id="brain-visualization" class="w-full h-48 relative mb-2"></div>
+                <div id="ai-thinking" class="text-sm text-gray-600 italic">Змейка анализирует окружение...</div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-md p-4">
+                <h3 class="font-bold text-lg text-gray-800 mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clip-rule="evenodd" />
+                    </svg>
+                    Прогресс обучения
+                </h3>
+                <canvas id="progress-chart"></canvas>
+            </div>
+        </div>
     </div>
     
-    <div id="game-container" class="w-full max-w-2xl h-96 border-2 border-gray-300 rounded-lg mb-4 bg-white">
-        <div id="snake" class="bg-green-500"></div>
-    </div>
-    
-    <div id="code-display" class="w-full max-w-2xl h-48 bg-gray-800 text-gray-200 p-3 rounded-lg overflow-auto font-mono text-sm mb-4">
-        <p>// Здесь будет отображаться генерируемый код...</p>
-    </div>
-    
-    <div class="flex gap-2">
-        <button id="start-btn" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition">Старт</button>
-        <button id="reset-btn" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">Сброс</button>
+    <!-- Блок генерации кода -->
+    <div class="w-full max-w-4xl mt-4">
+        <div class="bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+            <div class="flex items-center bg-gray-900 px-4 py-2">
+                <div class="flex gap-2 mr-4">
+                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                </div>
+                <div class="text-sm text-gray-400">code-generator.js</div>
+            </div>
+            <div id="code-display" class="w-full h-64 p-4 overflow-auto font-mono text-sm">
+                <p class="text-gray-400">// Сгенерированный код появится здесь...</p>
+            </div>
+        </div>
     </div>
 
     <script>
         // Инициализация игры
         const gameContainer = document.getElementById('game-container');
-        const snake = document.getElementById('snake');
+        const snakeHead = document.getElementById('snake-head');
         const codeDisplay = document.getElementById('code-display');
         const startBtn = document.getElementById('start-btn');
         const resetBtn = document.getElementById('reset-btn');
+        const aiBtn = document.getElementById('ai-btn');
+        const brainVisualization = document.getElementById('brain-visualization');
+        const aiThinking = document.getElementById('ai-thinking');
         
         const htmlStat = document.getElementById('html-stat');
         const cssStat = document.getElementById('css-stat');
         const jsStat = document.getElementById('js-stat');
         
-        // Состояние игры с возможностью сохранения
+        // Инициализация графика
+        const progressChart = new Chart(
+            document.getElementById('progress-chart'),
+            {
+                type: 'line',
+                data: {
+                    labels: ['HTML', 'CSS', 'JS'],
+                    datasets: [{
+                        label: 'Уровень знаний',
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            'rgba(230, 74, 25, 0.2)',
+                            'rgba(41, 101, 241, 0.2)',
+                            'rgba(240, 219, 79, 0.2)'
+                        ],
+                        borderColor: [
+                            'rgba(230, 74, 25, 1)',
+                            'rgba(41, 101, 241, 1)',
+                            'rgba(240, 219, 79, 1)'
+                        ],
+                        borderWidth: 2,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            }
+        );
+        
+        // Состояние игры с нейросетевыми параметрами
         let gameState = {
             score: { html: 0, css: 0, js: 0 },
             snake: {
                 x: 100,
                 y: 100,
-                speed: 3,
+                speed: 4,
                 direction: 'right',
                 size: 1,
-                tail: []
+                tail: [],
+                brain: {
+                    weights: {
+                        html: Math.random() * 0.2 + 0.8, // Предпочтение HTML
+                        css: Math.random() * 0.2 + 0.6,
+                        js: Math.random() * 0.2 + 0.4,
+                        avoidTail: 0.7
+                    },
+                    memory: [],
+                    lastDecision: null
+                }
             },
             knowledge: [],
             isRunning: false,
@@ -84,9 +224,17 @@
                 css: [],
                 js: []
             },
-            currentProject: []
+            currentProject: [],
+            generation: 1
         };
-
+        
+        // Концепции для изучения
+        const concepts = {
+            html: ['DOCTYPE', 'html', 'head', 'title', 'body', 'div', 'p', 'a', 'img', 'ul', 'li', 'form', 'input', 'button', 'section', 'header', 'footer', 'nav', 'article', 'aside'],
+            css: ['color', 'background-color', 'font-size', 'margin', 'padding', 'border', 'display', 'flex', 'grid', 'position', 'width', 'height', 'animation', 'transition', 'transform', 'box-shadow', 'z-index', 'media queries', 'variables'],
+            js: ['var', 'let', 'const', 'function', 'if', 'for', 'while', 'Array', 'Object', 'addEventListener', 'querySelector', 'getElementById', 'class', 'JSON', 'fetch', 'promise', 'async/await', 'map', 'filter', 'reduce']
+        };
+        
         // Загрузка сохраненного состояния
         function loadGameState() {
             const saved = localStorage.getItem('snakeGameState');
@@ -100,13 +248,14 @@
                         interval: null
                     };
                     updateStats();
+                    updateChart();
                     displayMessage('Загружено сохраненное состояние');
                 } catch (e) {
                     console.error('Ошибка загрузки:', e);
                 }
             }
         }
-
+        
         // Сохранение состояния
         function saveGameState() {
             localStorage.setItem('snakeGameState', JSON.stringify({
@@ -114,17 +263,12 @@
                 learnedConcepts: gameState.learnedConcepts,
                 snake: {
                     ...gameState.snake,
-                    tail: [] // Не сохраняем хвост
-                }
+                    tail: [], // Не сохраняем хвост
+                    brain: gameState.snake.brain // Сохраняем "мозг"
+                },
+                generation: gameState.generation
             }));
         }
-
-        // Концепции для изучения
-        const concepts = {
-            html: ['DOCTYPE', 'html', 'head', 'title', 'body', 'div', 'p', 'a', 'img', 'ul', 'li', 'form', 'input', 'button'],
-            css: ['color', 'background-color', 'font-size', 'margin', 'padding', 'border', 'display', 'flex', 'grid', 'position', 'width', 'height'],
-            js: ['var', 'let', 'const', 'function', 'if', 'for', 'while', 'Array', 'Object', 'addEventListener', 'querySelector', 'getElementById']
-        };
         
         // Генерация случайных знаний на поле
         function generateKnowledge() {
@@ -140,7 +284,8 @@
                         x: Math.random() * (gameContainer.offsetWidth - 20),
                         y: Math.random() * (gameContainer.offsetHeight - 20),
                         type: type,
-                        concept: concepts[type][Math.floor(Math.random() * concepts[type].length)]
+                        concept: concepts[type][Math.floor(Math.random() * concepts[type].length)],
+                        value: Math.floor(Math.random() * 3) + 1 // 1-3
                     };
                     
                     gameState.knowledge.push(knowledge);
@@ -150,15 +295,49 @@
                     element.style.left = `${knowledge.x}px`;
                     element.style.top = `${knowledge.y}px`;
                     element.setAttribute('data-concept', knowledge.concept);
+                    element.setAttribute('data-value', knowledge.value);
                     
-                    // Цвета для разных типов знаний
-                    if (type === 'html') element.classList.add('bg-orange-600');
-                    else if (type === 'css') element.classList.add('bg-blue-600');
-                    else if (type === 'js') element.classList.add('bg-yellow-400');
+                    // Стили для разных типов знаний
+                    if (type === 'html') {
+                        element.classList.add('bg-orange-600');
+                        element.style.boxShadow = `0 0 ${knowledge.value * 3}px rgba(230, 74, 25, 0.7)`;
+                    } else if (type === 'css') {
+                        element.classList.add('bg-blue-600');
+                        element.style.boxShadow = `0 0 ${knowledge.value * 3}px rgba(41, 101, 241, 0.7)`;
+                    } else if (type === 'js') {
+                        element.classList.add('bg-yellow-400');
+                        element.style.boxShadow = `0 0 ${knowledge.value * 3}px rgba(240, 219, 79, 0.7)`;
+                    }
                     
                     gameContainer.appendChild(element);
                 });
             }
+        }
+        
+        // Обновление хвоста змейки
+        function updateSnakeTail() {
+            // Удаляем старый хвост
+            document.querySelectorAll('.snake-tail').forEach(el => el.remove());
+            
+            // Добавляем новый хвост
+            gameState.snake.tail.forEach((segment, index) => {
+                const tailSegment = document.createElement('div');
+                tailSegment.className = 'snake-tail';
+                
+                // Градиент цвета - чем ближе к голове, тем ярче
+                const opacity = 0.7 - (index / gameState.snake.tail.length * 0.5);
+                tailSegment.style.backgroundColor = `rgba(72, 187, 120, ${opacity})`;
+                tailSegment.style.left = `${segment.x}px`;
+                tailSegment.style.top = `${segment.y}px`;
+                
+                // Эффект "волны" для хвоста
+                if (gameState.isRunning) {
+                    const waveOffset = Math.sin(Date.now() / 200 + index * 0.3) * 2;
+                    tailSegment.style.transform = `translateY(${waveOffset}px)`;
+                }
+                
+                gameContainer.appendChild(tailSegment);
+            });
         }
         
         // Движение змейки
@@ -167,7 +346,7 @@
             const prevX = gameState.snake.x;
             const prevY = gameState.snake.y;
             
-            // Обновляем позицию головы в зависимости от направления
+            // Обновляем позицию головы
             switch (gameState.snake.direction) {
                 case 'up':
                     gameState.snake.y -= gameState.snake.speed;
@@ -184,37 +363,50 @@
             }
             
             // Проверяем границы
-            if (gameState.snake.x < 0) gameState.snake.x = gameContainer.offsetWidth - 20;
-            if (gameState.snake.x > gameContainer.offsetWidth - 20) gameState.snake.x = 0;
-            if (gameState.snake.y < 0) gameState.snake.y = gameContainer.offsetHeight - 20;
-            if (gameState.snake.y > gameContainer.offsetHeight - 20) gameState.snake.y = 0;
+            if (gameState.snake.x < 0) gameState.snake.x = gameContainer.offsetWidth - 24;
+            if (gameState.snake.x > gameContainer.offsetWidth - 24) gameState.snake.x = 0;
+            if (gameState.snake.y < 0) gameState.snake.y = gameContainer.offsetHeight - 24;
+            if (gameState.snake.y > gameContainer.offsetHeight - 24) gameState.snake.y = 0;
             
             // Обновляем хвост
             if (gameState.snake.tail.length > 0) {
                 gameState.snake.tail.unshift({ x: prevX, y: prevY });
-                if (gameState.snake.tail.length > gameState.snake.size) {
+                if (gameState.snake.tail.length > gameState.snake.size * 3) {
                     gameState.snake.tail.pop();
+                }
+            } else if (gameState.snake.size > 1) {
+                // Инициализируем хвост, если змейка должна быть длиннее
+                for (let i = 0; i < gameState.snake.size * 3; i++) {
+                    gameState.snake.tail.push({ x: prevX, y: prevY });
                 }
             }
             
-            // Обновляем позицию змейки на экране
-            snake.style.left = `${gameState.snake.x}px`;
-            snake.style.top = `${gameState.snake.y}px`;
+            // Анимация головы
+            const headTilt = {
+                'up': 'rotate(-15deg)',
+                'down': 'rotate(15deg)',
+                'left': 'rotateY(180deg)',
+                'right': 'rotateY(0deg)'
+            };
+            snakeHead.style.transform = `${headTilt[gameState.snake.direction]} scale(1.1)`;
             
-            // Проверяем столкновение с хвостом
+            // Обновляем позицию на экране
+            snakeHead.style.left = `${gameState.snake.x}px`;
+            snakeHead.style.top = `${gameState.snake.y}px`;
+            
+            updateSnakeTail();
             checkTailCollision();
-            
-            // Проверяем сбор знаний
             checkKnowledgeCollection();
+            updateBrainVisualization();
         }
         
-        // Проверка сбора знаний
+        // Проверка сбора знаний с учетом нейросетевых предпочтений
         function checkKnowledgeCollection() {
             const snakeRect = {
                 x: gameState.snake.x,
                 y: gameState.snake.y,
-                width: 20,
-                height: 20
+                width: 24,
+                height: 24
             };
             
             for (let i = 0; i < gameState.knowledge.length; i++) {
@@ -222,23 +414,31 @@
                 const knowledgeRect = {
                     x: knowledge.x,
                     y: knowledge.y,
-                    width: 15,
-                    height: 15
+                    width: 18,
+                    height: 18
                 };
                 
                 if (isColliding(snakeRect, knowledgeRect)) {
-                    // Увеличиваем счет
-                    gameState.score[knowledge.type]++;
+                    // Увеличиваем счет с учетом ценности знания
+                    const value = knowledge.value || 1;
+                    gameState.score[knowledge.type] += value;
                     updateStats();
+                    updateChart();
                     
                     // Добавляем концепцию в изученные
                     if (!gameState.learnedConcepts[knowledge.type].includes(knowledge.concept)) {
                         gameState.learnedConcepts[knowledge.type].push(knowledge.concept);
                         displayLearnedConcept(knowledge.type, knowledge.concept);
+                        
+                        // Улучшаем "мозг" при изучении нового концепта
+                        gameState.snake.brain.weights[knowledge.type] += 0.05;
                     }
                     
                     // Увеличиваем размер змейки
-                    gameState.snake.size += 1;
+                    gameState.snake.size += value;
+                    
+                    // Эффект сбора
+                    createCollectionEffect(knowledge.x, knowledge.y, knowledge.type);
                     
                     // Удаляем собранное знание
                     document.querySelectorAll('.knowledge').forEach(el => {
@@ -248,25 +448,48 @@
                     });
                     
                     gameState.knowledge.splice(i, 1);
+                    gameState.currentProject.push(knowledge);
                     
-                    // Добавляем знание в текущий проект
-                    gameState.currentProject.push({
-                        type: knowledge.type,
-                        concept: knowledge.concept
-                    });
-                    
-                    // Проверяем, можно ли сгенерировать код
                     tryGenerateCode();
-                    
-                    // Генерируем новое знание
                     generateNewKnowledge();
-                    
-                    // Сохраняем состояние
                     saveGameState();
                     
                     break;
                 }
             }
+        }
+        
+        // Эффект при сборе знаний
+        function createCollectionEffect(x, y, type) {
+            const effect = document.createElement('div');
+            effect.style.left = `${x}px`;
+            effect.style.top = `${y}px`;
+            effect.className = 'absolute rounded-full pointer-events-none';
+            
+            let color;
+            if (type === 'html') color = 'bg-orange-500';
+            else if (type === 'css') color = 'bg-blue-500';
+            else color = 'bg-yellow-400';
+            
+            effect.classList.add(color);
+            
+            effect.style.width = '20px';
+            effect.style.height = '20px';
+            effect.style.transform = 'scale(1)';
+            effect.style.opacity = '1';
+            
+            gameContainer.appendChild(effect);
+            
+            // Анимация
+            const animation = effect.animate([
+                { transform: 'scale(1)', opacity: 1 },
+                { transform: 'scale(3)', opacity: 0 }
+            ], {
+                duration: 500,
+                easing: 'ease-out'
+            });
+            
+            animation.onfinish = () => effect.remove();
         }
         
         // Проверка столкновения с хвостом
@@ -275,10 +498,17 @@
             
             for (let i = 0; i < gameState.snake.tail.length; i++) {
                 const segment = gameState.snake.tail[i];
-                if (Math.abs(head.x - segment.x) < 15 && Math.abs(head.y - segment.y) < 15) {
+                if (Math.abs(head.x - segment.x) < 18 && Math.abs(head.y - segment.y) < 18) {
                     // Столкновение - уменьшаем размер
-                    gameState.snake.size = Math.max(1, gameState.snake.size - 3);
-                    gameState.snake.tail = gameState.snake.tail.slice(0, gameState.snake.size);
+                    const penalty = Math.max(1, Math.floor(gameState.snake.size * 0.2));
+                    gameState.snake.size = Math.max(1, gameState.snake.size - penalty);
+                    gameState.snake.tail = gameState.snake.tail.slice(0, gameState.snake.size * 3);
+                    
+                    // Эффект столкновения
+                    snakeHead.style.backgroundColor = '#ef4444';
+                    setTimeout(() => {
+                        snakeHead.style.backgroundColor = '';
+                    }, 300);
                     
                     // Удаляем случайный изученный концепт
                     const types = ['html', 'css', 'js'].filter(t => gameState.learnedConcepts[t].length > 0);
@@ -287,9 +517,13 @@
                         const index = Math.floor(Math.random() * gameState.learnedConcepts[randomType].length);
                         const removed = gameState.learnedConcepts[randomType].splice(index, 1)[0];
                         displayMessage(`Потерян концепт: ${removed} (${randomType.toUpperCase()})`);
-                        saveGameState();
+                        
+                        // Адаптируем "мозг" после потери
+                        gameState.snake.brain.weights[randomType] = Math.max(0.3, gameState.snake.brain.weights[randomType] - 0.03);
                     }
                     
+                    updateChart();
+                    saveGameState();
                     break;
                 }
             }
@@ -302,73 +536,139 @@
             jsStat.textContent = `JavaScript: ${gameState.score.js}`;
         }
         
+        // Обновление графика
+        function updateChart() {
+            progressChart.data.datasets[0].data = [
+                gameState.score.html,
+                gameState.score.css,
+                gameState.score.js
+            ];
+            progressChart.update();
+        }
+        
         // Отображение изученного концепта
         function displayLearnedConcept(type, concept) {
-            displayMessage(`Изучен новый концепт: ${concept} (${type.toUpperCase()})`);
+            displayMessage(`🎯 Изучен новый концепт: ${concept} (${type.toUpperCase()})`, type);
         }
         
         // Попытка сгенерировать код
         function tryGenerateCode() {
-            // Минимальные требования для генерации кода
             const minRequirements = {
-                html: 3,
-                css: 2,
-                js: 1
+                html: 5,
+                css: 3,
+                js: 2
             };
             
-            // Проверяем, достаточно ли знаний
             if (gameState.score.html >= minRequirements.html && 
                 gameState.score.css >= minRequirements.css && 
                 gameState.score.js >= minRequirements.js) {
                 
-                // Генерируем простой HTML-код
-                let htmlCode = '';
-                let cssCode = '';
-                let jsCode = '';
+                let htmlCode = generateHtmlCode();
+                let cssCode = generateCssCode();
+                let jsCode = generateJsCode();
                 
-                // HTML
-                if (gameState.learnedConcepts.html.includes('div')) htmlCode += '<div>\n';
-                if (gameState.learnedConcepts.html.includes('p')) htmlCode += '  <p>Привет, мир!</p>\n';
-                if (gameState.learnedConcepts.html.includes('button')) htmlCode += '  <button id="myBtn">Нажми меня</button>\n';
-                if (gameState.learnedConcepts.html.includes('div')) htmlCode += '</div>\n';
-                
-                // CSS
-                if (gameState.learnedConcepts.css.includes('color')) cssCode += 'p { color: blue; }\n';
-                if (gameState.learnedConcepts.css.includes('background-color')) cssCode += 'div { background-color: #f0f0f0; }\n';
-                if (gameState.learnedConcepts.css.includes('padding')) cssCode += 'div { padding: 10px; }\n';
-                
-                // JavaScript
-                if (gameState.learnedConcepts.js.includes('addEventListener')) {
-                    jsCode += 'document.getElementById("myBtn").addEventListener("click", function() {\n';
-                    if (gameState.learnedConcepts.js.includes('console.log')) jsCode += '  console.log("Кнопка нажата!");\n';
-                    jsCode += '});\n';
-                }
-                
-                // Отображаем сгенерированный код
                 let fullCode = '';
-                if (htmlCode) fullCode += `<!-- HTML -->\n${htmlCode}\n`;
-                if (cssCode) fullCode += `/* CSS */\n${cssCode}\n`;
+                if (htmlCode) fullCode += `<!-- HTML -->\n${htmlCode}\n\n`;
+                if (cssCode) fullCode += `/* CSS */\n${cssCode}\n\n`;
                 if (jsCode) fullCode += `// JavaScript\n${jsCode}\n`;
                 
                 if (fullCode) {
-                    codeDisplay.innerHTML = `<pre class="text-green-400">${fullCode}</pre>`;
-                    displayMessage('Сгенерирован новый код!');
+                    const codeElement = document.createElement('pre');
+                    codeElement.className = 'text-green-400 mb-4';
+                    codeElement.textContent = fullCode;
                     
-                    // Сбрасываем счетчик для следующего проекта
-                    gameState.score.html = Math.max(0, gameState.score.html - minRequirements.html);
-                    gameState.score.css = Math.max(0, gameState.score.css - minRequirements.css);
-                    gameState.score.js = Math.max(0, gameState.score.js - minRequirements.js);
+                    const generationInfo = document.createElement('div');
+                    generationInfo.className = 'text-gray-500 text-xs mb-2';
+                    generationInfo.textContent = `// Поколение ${gameState.generation++}`;
+                    
+                    codeDisplay.prepend(generationInfo);
+                    codeDisplay.prepend(codeElement);
+                    
+                    displayMessage('🚀 Сгенерирован новый код!', 'success');
+                    
+                    gameState.score.html -= minRequirements.html;
+                    gameState.score.css -= minRequirements.css;
+                    gameState.score.js -= minRequirements.js;
+                    
                     updateStats();
+                    updateChart();
                     saveGameState();
                 }
             }
         }
         
+        // Генерация HTML кода
+        function generateHtmlCode() {
+            let code = '';
+            const known = gameState.learnedConcepts.html;
+            
+            if (known.includes('div') && known.includes('p') && known.includes('button')) {
+                code += '<div class="container">\n';
+                if (known.includes('h1')) code += '  <h1>Заголовок</h1>\n';
+                if (known.includes('p')) code += '  <p>Текст параграфа</p>\n';
+                if (known.includes('button')) code += '  <button id="myBtn">Кнопка</button>\n';
+                code += '</div>';
+            }
+            
+            return code;
+        }
+        
+        // Генерация CSS кода
+        function generateCssCode() {
+            let code = '';
+            const known = gameState.learnedConcepts.css;
+            
+            if (known.includes('color') || known.includes('background-color')) {
+                code += '.container {\n';
+                if (known.includes('width')) code += '  width: 100%;\n';
+                if (known.includes('max-width')) code += '  max-width: 1200px;\n';
+                if (known.includes('margin')) code += '  margin: 0 auto;\n';
+                if (known.includes('padding')) code += '  padding: 20px;\n';
+                if (known.includes('background-color')) code += '  background-color: #f8f9fa;\n';
+                if (known.includes('border')) code += '  border: 1px solid #ddd;\n';
+                if (known.includes('border-radius')) code += '  border-radius: 8px;\n';
+                code += '}\n\n';
+                
+                if (known.includes('h1')) {
+                    code += 'h1 {\n';
+                    if (known.includes('color')) code += '  color: #333;\n';
+                    if (known.includes('font-size')) code += '  font-size: 2rem;\n';
+                    code += '}\n\n';
+                }
+            }
+            
+            return code;
+        }
+        
+        // Генерация JavaScript кода
+        function generateJsCode() {
+            let code = '';
+            const known = gameState.learnedConcepts.js;
+            
+            if (known.includes('addEventListener') && known.includes('getElementById')) {
+                code += 'document.getElementById("myBtn").addEventListener("click", () => {\n';
+                if (known.includes('console.log')) code += '  console.log("Кнопка нажата!");\n';
+                if (known.includes('alert')) code += '  alert("Действие выполнено!");\n';
+                code += '});';
+            }
+            
+            return code;
+        }
+        
         // Отображение сообщений
-        function displayMessage(message) {
+        function displayMessage(message, type = 'info') {
             const messageElement = document.createElement('div');
             messageElement.textContent = message;
-            messageElement.classList.add('text-gray-300', 'mb-1');
+            
+            const colors = {
+                info: 'text-gray-300',
+                html: 'text-orange-400',
+                css: 'text-blue-400',
+                js: 'text-yellow-500',
+                success: 'text-green-400'
+            };
+            
+            messageElement.className = `mb-1 text-sm ${colors[type] || colors.info}`;
             codeDisplay.appendChild(messageElement);
             codeDisplay.scrollTop = codeDisplay.scrollHeight;
         }
@@ -381,51 +681,151 @@
                    rect1.y + rect1.height > rect2.y;
         }
         
-        // ИИ для принятия решений
+        // Визуализация "мозга" змейки
+        function updateBrainVisualization() {
+            brainVisualization.innerHTML = '';
+            
+            const { weights } = gameState.snake.brain;
+            const types = ['html', 'css', 'js', 'avoidTail'];
+            const colors = ['bg-orange-500', 'bg-blue-500', 'bg-yellow-400', 'bg-red-500'];
+            
+            // Создаем "нейроны"
+            types.forEach((type, i) => {
+                const value = weights[type] || 0;
+                
+                // Визуализация весов
+                const neuron = document.createElement('div');
+                neuron.className = `brain-cell ${colors[i]} shadow-md`;
+                neuron.style.left = `${10 + i * 25}px`;
+                neuron.style.top = `${30 + (1 - value) * 100}px`;
+                neuron.style.width = `${value * 15 + 5}px`;
+                neuron.style.height = `${value * 15 + 5}px`;
+                neuron.style.opacity = value;
+                neuron.title = `${type}: ${value.toFixed(2)}`;
+                
+                brainVisualization.appendChild(neuron);
+                
+                // Подписи
+                const label = document.createElement('div');
+                label.className = 'text-xs absolute text-gray-700';
+                label.textContent = type;
+                label.style.left = `${10 + i * 25}px`;
+                label.style.top = '10px';
+                brainVisualization.appendChild(label);
+            });
+            
+            // Анализ текущего состояния
+            const analysis = [
+                `HTML предпочтение: ${weights.html.toFixed(2)}`,
+                `CSS предпочтение: ${weights.css.toFixed(2)}`,
+                `JS предпочтение: ${weights.js.toFixed(2)}`,
+                `Избегание хвоста: ${weights.avoidTail.toFixed(2)}`
+            ];
+            
+            aiThinking.innerHTML = analysis.map(a => `<div class="text-xs mb-1">• ${a}</div>`).join('');
+        }
+        
+        // Нейросетевое принятие решений
         function makeDecision() {
             if (gameState.knowledge.length === 0) return;
             
-            // Находим ближайшее знание
-            let closest = null;
-            let minDistance = Infinity;
-            
-            gameState.knowledge.forEach(knowledge => {
-                const dx = knowledge.x - gameState.snake.x;
-                const dy = knowledge.y - gameState.snake.y;
+            // Анализируем окружение
+            const knowledgeScores = gameState.knowledge.map(k => {
+                const dx = k.x - gameState.snake.x;
+                const dy = k.y - gameState.snake.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    closest = knowledge;
-                }
+                // Вес зависит от типа знания и расстояния
+                const typeWeight = gameState.snake.brain.weights[k.type] || 1;
+                const value = k.value || 1;
+                const score = (typeWeight * value) / (distance * 0.1 + 1);
+                
+                return { ...k, score, dx, dy };
             });
             
-            if (!closest) return;
-            
-            // Определяем направление к ближайшему знанию
-            const dx = closest.x - gameState.snake.x;
-            const dy = closest.y - gameState.snake.y;
-            
-            // Приоритет направления с большей разницей
-            if (Math.abs(dx) > Math.abs(dy)) {
-                gameState.snake.direction = dx > 0 ? 'right' : 'left';
-            } else {
-                gameState.snake.direction = dy > 0 ? 'down' : 'up';
+            // Учитываем опасность столкновения с хвостом
+            if (gameState.snake.tail.length > 0) {
+                const tail = gameState.snake.tail[0];
+                const dx = tail.x - gameState.snake.x;
+                const dy = tail.y - gameState.snake.y;
+                const tailDistance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (tailDistance < 100) {
+                    knowledgeScores.forEach(k => {
+                        // Уменьшаем оценку знаний, которые ведут к хвосту
+                        const tailDanger = (100 - tailDistance) * gameState.snake.brain.weights.avoidTail * 0.01;
+                        k.score -= tailDanger;
+                    });
+                }
             }
             
-            // 10% шанс на случайное изменение направления (для исследования)
-            if (Math.random() < 0.1) {
+            // Выбираем лучшую цель
+            knowledgeScores.sort((a, b) => b.score - a.score);
+            const bestTarget = knowledgeScores[0];
+            
+            if (bestTarget) {
+                // Определяем направление
+                const { dx, dy } = bestTarget;
+                
+                if (Math.abs(dx) > Math.abs(dy)) {
+                    gameState.snake.direction = dx > 0 ? 'right' : 'left';
+                } else {
+                    gameState.snake.direction = dy > 0 ? 'down' : 'up';
+                }
+                
+                // Запоминаем решение для визуализации
+                gameState.snake.brain.lastDecision = {
+                    target: bestTarget.type,
+                    score: bestTarget.score.toFixed(2)
+                };
+            }
+            
+            // Иногда добавляем случайность для исследования
+            if (Math.random() < 0.05) {
                 const directions = ['up', 'down', 'left', 'right'];
                 gameState.snake.direction = directions[Math.floor(Math.random() * directions.length)];
+                
+                gameState.snake.brain.lastDecision = {
+                    target: 'random',
+                    score: '0.00'
+                };
             }
         }
         
-        // Основной игровой цикл
-        function gameLoop() {
-            if (!gameState.isRunning) return;
+        // Генерация нового знания после сбора
+        function generateNewKnowledge() {
+            const types = ['html', 'css', 'js'];
+            const type = types[Math.floor(Math.random() * types.length)];
             
-            makeDecision();
-            moveSnake();
+            const knowledge = {
+                x: Math.random() * (gameContainer.offsetWidth - 20),
+                y: Math.random() * (gameContainer.offsetHeight - 20),
+                type: type,
+                concept: concepts[type][Math.floor(Math.random() * concepts[type].length)],
+                value: Math.floor(Math.random() * 3) + 1
+            };
+            
+            gameState.knowledge.push(knowledge);
+            
+            const element = document.createElement('div');
+            element.className = `knowledge ${type}`;
+            element.style.left = `${knowledge.x}px`;
+            element.style.top = `${knowledge.y}px`;
+            element.setAttribute('data-concept', knowledge.concept);
+            element.setAttribute('data-value', knowledge.value);
+            
+            if (type === 'html') {
+                element.classList.add('bg-orange-600');
+                element.style.boxShadow = `0 0 ${knowledge.value * 3}px rgba(230, 74, 25, 0.7)`;
+            } else if (type === 'css') {
+                element.classList.add('bg-blue-600');
+                element.style.boxShadow = `0 0 ${knowledge.value * 3}px rgba(41, 101, 241, 0.7)`;
+            } else if (type === 'js') {
+                element.classList.add('bg-yellow-400');
+                element.style.boxShadow = `0 0 ${knowledge.value * 3}px rgba(240, 219, 79, 0.7)`;
+            }
+            
+            gameContainer.appendChild(element);
         }
         
         // Инициализация игры
@@ -436,19 +836,25 @@
             gameState.snake.size = 1;
             gameState.snake.tail = [];
             
-            snake.style.left = '100px';
-            snake.style.top = '100px';
+            snakeHead.style.left = '100px';
+            snakeHead.style.top = '100px';
             
             generateKnowledge();
+            updateBrainVisualization();
         }
         
         // Обработчики событий
         startBtn.addEventListener('click', () => {
             if (!gameState.isRunning) {
                 gameState.isRunning = true;
-                startBtn.textContent = 'Пауза';
-                startBtn.classList.remove('bg-green-600');
-                startBtn.classList.add('bg-yellow-600');
+                startBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    Пауза
+                `;
+                startBtn.classList.remove('from-green-500', 'to-green-600');
+                startBtn.classList.add('from-yellow-500', 'to-yellow-600');
                 
                 if (!gameState.interval) {
                     initGame();
@@ -456,9 +862,14 @@
                 }
             } else {
                 gameState.isRunning = false;
-                startBtn.textContent = 'Продолжить';
-                startBtn.classList.remove('bg-yellow-600');
-                startBtn.classList.add('bg-green-600');
+                startBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                    </svg>
+                    Продолжить
+                `;
+                startBtn.classList.remove('from-yellow-500', 'to-yellow-600');
+                startBtn.classList.add('from-green-500', 'to-green-600');
                 clearInterval(gameState.interval);
                 gameState.interval = null;
             }
@@ -471,38 +882,95 @@
             
             // Сброс состояния
             gameState = {
+                ...gameState,
                 score: { html: 0, css: 0, js: 0 },
                 snake: {
                     x: 100,
                     y: 100,
-                    speed: 3,
+                    speed: 4,
                     direction: 'right',
                     size: 1,
-                    tail: []
+                    tail: [],
+                    brain: {
+                        weights: {
+                            html: Math.random() * 0.2 + 0.8,
+                            css: Math.random() * 0.2 + 0.6,
+                            js: Math.random() * 0.2 + 0.4,
+                            avoidTail: 0.7
+                        },
+                        memory: [],
+                        lastDecision: null
+                    }
                 },
                 knowledge: [],
-                isRunning: false,
-                interval: null,
                 learnedConcepts: {
                     html: [],
                     css: [],
                     js: []
                 },
-                currentProject: []
+                currentProject: [],
+                generation: 1
             };
             
             // Обновление отображения
             updateStats();
-            snake.style.left = '100px';
-            snake.style.top = '100px';
-            document.querySelectorAll('.knowledge').forEach(el => el.remove());
-            codeDisplay.innerHTML = '<p class="text-gray-400">// Здесь будет отображаться генерируемый код...</p>';
-            startBtn.textContent = 'Старт';
-            startBtn.classList.remove('bg-yellow-600');
-            startBtn.classList.add('bg-green-600');
+            updateChart();
+            snakeHead.style.left = '100px';
+            snakeHead.style.top = '100px';
+            document.querySelectorAll('.knowledge, .snake-tail').forEach(el => el.remove());
+            codeDisplay.innerHTML = '<p class="text-gray-400">// Сгенерированный код появится здесь...</p>';
+            startBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                </svg>
+                Старт
+            `;
+            startBtn.classList.remove('from-yellow-500', 'to-yellow-600');
+            startBtn.classList.add('from-green-500', 'to-green-600');
             
             // Очищаем сохранение
             localStorage.removeItem('snakeGameState');
+            updateBrainVisualization();
+        });
+        
+        aiBtn.addEventListener('click', () => {
+            // Анализ текущего состояния AI
+            const analysis = [
+                `Текущее поколение: ${gameState.generation}`,
+                `Изучено HTML: ${gameState.learnedConcepts.html.length}/${concepts.html.length}`,
+                `Изучено CSS: ${gameState.learnedConcepts.css.length}/${concepts.css.length}`,
+                `Изучено JS: ${gameState.learnedConcepts.js.length}/${concepts.js.length}`,
+                `Последнее решение: ${gameState.snake.brain.lastDecision?.target || 'нет'} (score: ${gameState.snake.brain.lastDecision?.score || '0.00'})`
+            ];
+            
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl p-6 max-w-md w-full">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-gray-800">Анализ ИИ</h3>
+                        <button class="text-gray-500 hover:text-gray-700" id="close-ai-modal">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="space-y-2">
+                        ${analysis.map(item => `<div class="p-2 bg-gray-50 rounded">${item}</div>`).join('')}
+                    </div>
+                    <div class="mt-4 text-sm text-gray-500">
+                        Веса нейросети: HTML ${gameState.snake.brain.weights.html.toFixed(2)}, 
+                        CSS ${gameState.snake.brain.weights.css.toFixed(2)}, 
+                        JS ${gameState.snake.brain.weights.js.toFixed(2)}
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            modal.querySelector('#close-ai-modal').addEventListener('click', () => {
+                modal.remove();
+            });
         });
         
         // Управление с клавиатуры
@@ -524,7 +992,15 @@
                     break;
             }
         });
-
+        
+        // Основной игровой цикл
+        function gameLoop() {
+            if (!gameState.isRunning) return;
+            
+            makeDecision();
+            moveSnake();
+        }
+        
         // Загружаем сохраненную игру при запуске
         loadGameState();
     </script>
